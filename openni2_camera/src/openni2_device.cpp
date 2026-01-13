@@ -30,32 +30,33 @@
  */
 
 #include "OpenNI.h"
-#include <PS1080.h> // For XN_STREAM_PROPERTY_EMITTER_DCMOS_DISTANCE property
+#include <PS1080.h>  // For XN_STREAM_PROPERTY_EMITTER_DCMOS_DISTANCE property
 
 #include "openni2_camera/openni2_device.h"
 #include "openni2_camera/openni2_exception.h"
 #include "openni2_camera/openni2_convert.h"
 #include "openni2_camera/openni2_frame_listener.h"
 
+#include <rclcpp/logger.hpp>
+#include <rclcpp/logging.hpp>
 #include <string>
 
 namespace openni2_wrapper
 {
 
-void replace_all(std::string &input, const std::string &search, const std::string &replace)
+void replace_all(std::string& input, const std::string& search, const std::string& replace)
 {
   size_t pos;
   while ((pos = input.find(search)) != std::string::npos)
-      input.replace(pos, 1, replace);
+    input.replace(pos, 1, replace);
 }
 
-OpenNI2Device::OpenNI2Device(const std::string& device_URI,
-                             rclcpp::Node* node) :
-    openni_device_(),
-    ir_video_started_(false),
-    color_video_started_(false),
-    depth_video_started_(false),
-    image_registration_activated_(false)
+OpenNI2Device::OpenNI2Device(const std::string& device_URI, rclcpp::Node* node)
+  : openni_device_()
+  , ir_video_started_(false)
+  , color_video_started_(false)
+  , depth_video_started_(false)
+  , image_registration_activated_(false)
 {
   openni::Status rc = openni::OpenNI::initialize();
   if (rc != openni::STATUS_OK)
@@ -81,7 +82,6 @@ OpenNI2Device::OpenNI2Device(const std::string& device_URI,
   ir_frame_listener = std::make_shared<OpenNI2FrameListener>(node);
   color_frame_listener = std::make_shared<OpenNI2FrameListener>(node);
   depth_frame_listener = std::make_shared<OpenNI2FrameListener>(node);
-
 }
 
 OpenNI2Device::~OpenNI2Device()
@@ -181,7 +181,8 @@ float OpenNI2Device::getBaseline() const
   if (stream && stream->isPropertySupported(XN_STREAM_PROPERTY_EMITTER_DCMOS_DISTANCE))
   {
     double baseline_meters;
-    stream->getProperty(XN_STREAM_PROPERTY_EMITTER_DCMOS_DISTANCE, &baseline_meters); // Device specific -- from PS1080.h
+    stream->getProperty(XN_STREAM_PROPERTY_EMITTER_DCMOS_DISTANCE,
+                        &baseline_meters);                   // Device specific -- from PS1080.h
     baseline = static_cast<float>(baseline_meters * 0.01f);  // baseline from cm -> meters
   }
   return baseline;
@@ -239,7 +240,6 @@ bool OpenNI2Device::isDepthVideoModeSupported(const OpenNI2VideoMode& video_mode
   }
 
   return supported;
-
 }
 
 bool OpenNI2Device::hasIRSensor() const
@@ -268,7 +268,6 @@ void OpenNI2Device::startIRStream()
     stream->addNewFrameListener(ir_frame_listener.get());
     ir_video_started_ = true;
   }
-
 }
 
 void OpenNI2Device::startColorStream()
@@ -347,7 +346,6 @@ void OpenNI2Device::shutdown()
 
   if (depth_video_stream_.get() != 0)
     depth_video_stream_->destroy();
-
 }
 
 bool OpenNI2Device::isIRStreamStarted()
@@ -418,6 +416,8 @@ bool OpenNI2Device::isImageRegistrationModeSupported() const
 
 void OpenNI2Device::setImageRegistrationMode(bool enabled)
 {
+  RCLCPP_INFO(rclcpp::get_logger("aaa"), "Image registration mode supported: %d", isImageRegistrationModeSupported());
+  return;
   if (isImageRegistrationModeSupported())
   {
     image_registration_activated_ = enabled;
@@ -538,7 +538,8 @@ void OpenNI2Device::setDepthVideoMode(const OpenNI2VideoMode& video_mode)
 
 void OpenNI2Device::setAutoExposure(bool enable)
 {
-  std::shared_ptr<openni::VideoStream> stream = getColorVideoStream();
+  // std::shared_ptr<openni::VideoStream> stream = getColorVideoStream();
+  std::shared_ptr<openni::VideoStream> stream = getDepthVideoStream();
 
   if (stream)
   {
@@ -549,7 +550,6 @@ void OpenNI2Device::setAutoExposure(bool enable)
       if (rc != openni::STATUS_OK)
         THROW_OPENNI_EXCEPTION("Couldn't set auto exposure: \n%s\n", openni::OpenNI::getExtendedError());
     }
-
   }
 }
 void OpenNI2Device::setAutoWhiteBalance(bool enable)
@@ -565,7 +565,6 @@ void OpenNI2Device::setAutoWhiteBalance(bool enable)
       if (rc != openni::STATUS_OK)
         THROW_OPENNI_EXCEPTION("Couldn't set auto white balance: \n%s\n", openni::OpenNI::getExtendedError());
     }
-
   }
 }
 
@@ -708,9 +707,8 @@ std::shared_ptr<openni::VideoStream> OpenNI2Device::getDepthVideoStream() const
   return depth_video_stream_;
 }
 
-std::ostream& operator <<(std::ostream& stream, const OpenNI2Device& device)
+std::ostream& operator<<(std::ostream& stream, const OpenNI2Device& device)
 {
-
   stream << "Device info (" << device.getUri() << ")" << std::endl;
   stream << "   Vendor: " << device.getVendor() << std::endl;
   stream << "   Name: " << device.getName() << std::endl;
@@ -765,4 +763,4 @@ std::ostream& operator <<(std::ostream& stream, const OpenNI2Device& device)
   return stream;
 }
 
-}
+}  // namespace openni2_wrapper
