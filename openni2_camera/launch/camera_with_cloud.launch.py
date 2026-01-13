@@ -35,64 +35,80 @@
 import launch
 import launch_ros.actions
 import launch_ros.descriptions
-from launch.substitutions import LaunchConfiguration, ThisLaunchFileDir, PathJoinSubstitution
+from launch.substitutions import (
+    LaunchConfiguration,
+    ThisLaunchFileDir,
+    PathJoinSubstitution,
+)
 from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 
 
 def generate_launch_description():
-
     namespace_param_name = "namespace"
     namespace = LaunchConfiguration(namespace_param_name)
-    namespace_launch_arg = DeclareLaunchArgument(namespace_param_name, default_value='camera')
+    namespace_launch_arg = DeclareLaunchArgument(
+        namespace_param_name, default_value="camera"
+    )
 
     tf_prefix_param_name = "tf_prefix"
     tf_prefix = LaunchConfiguration(tf_prefix_param_name)
-    tf_prefix_launch_arg = DeclareLaunchArgument(tf_prefix_param_name, default_value='')
+    tf_prefix_launch_arg = DeclareLaunchArgument(tf_prefix_param_name, default_value="")
 
     container = launch_ros.actions.ComposableNodeContainer(
-            name='container',
-            namespace=namespace,
-            package='rclcpp_components',
-            executable='component_container',
-            composable_node_descriptions=[
-                # Driver
-                launch_ros.descriptions.ComposableNode(
-                    package='openni2_camera',
-                    plugin='openni2_wrapper::OpenNI2Driver',
-                    name='driver',
-                    namespace=namespace,
-                    parameters=[{'depth_registration': True},
-                                {'use_device_time': True},
-                                {'rgb_frame_id': [namespace,"_rgb_optical_frame"]},
-                                {'depth_frame_id': [namespace,"_depth_optical_frame"]},
-                                {'ir_frame_id': [namespace,"_ir_optical_frame"]},],
-                    remappings=[('depth/image', 'depth_registered/image_raw')],
-                ),
-                # Create XYZRGB point cloud
-                launch_ros.descriptions.ComposableNode(
-                    package='depth_image_proc',
-                    plugin='depth_image_proc::PointCloudXyzrgbNode',
-                    name='points_xyzrgb',
-                    namespace=namespace,
-                    parameters=[{'queue_size': 10}],
-                    remappings=[('rgb/image_rect_color', 'rgb/image_raw'),
-                                ('rgb/camera_info', 'rgb/camera_info'),
-                                ('depth_registered/image_rect', 'depth_registered/image_raw'),
-                                ('points', 'depth_registered/points'), ],
-                ),
-            ],
-            output='screen',
+        name="container",
+        namespace=namespace,
+        package="rclcpp_components",
+        executable="component_container",
+        composable_node_descriptions=[
+            # Driver
+            launch_ros.descriptions.ComposableNode(
+                package="openni2_camera",
+                plugin="openni2_wrapper::OpenNI2Driver",
+                name="driver",
+                namespace=namespace,
+                parameters=[
+                    {"depth_registration": True},
+                    {"use_device_time": True},
+                    {"rgb_frame_id": [namespace, "_rgb_optical_frame"]},
+                    {"depth_frame_id": [namespace, "_depth_optical_frame"]},
+                    {"ir_frame_id": [namespace, "_ir_optical_frame"]},
+                ],
+                remappings=[("depth/image", "depth_registered/image_raw")],
+            ),
+            # Create XYZRGB point cloud
+            launch_ros.descriptions.ComposableNode(
+                package="depth_image_proc",
+                plugin="depth_image_proc::PointCloudXyzrgbNode",
+                name="points_xyzrgb",
+                namespace=namespace,
+                parameters=[{"queue_size": 10}],
+                remappings=[
+                    ("rgb/image_rect_color", "rgb/image_raw"),
+                    ("rgb/camera_info", "rgb/camera_info"),
+                    ("depth_registered/image_rect", "depth_registered/image_raw"),
+                    ("points", "depth_registered/points"),
+                ],
+            ),
+        ],
+        output="screen",
     )
 
     tfs = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(PathJoinSubstitution([ThisLaunchFileDir(), "tfs.launch.py"])),
-        launch_arguments={namespace_param_name: namespace, tf_prefix_param_name: tf_prefix}.items(),
+        PythonLaunchDescriptionSource(
+            PathJoinSubstitution([ThisLaunchFileDir(), "tfs.launch.py"])
+        ),
+        launch_arguments={
+            namespace_param_name: namespace,
+            tf_prefix_param_name: tf_prefix,
+        }.items(),
     )
 
-    return launch.LaunchDescription([
-        namespace_launch_arg,
-        tf_prefix_launch_arg,
-        container,
-        tfs,
-    ])
+    return launch.LaunchDescription(
+        [
+            namespace_launch_arg,
+            tf_prefix_launch_arg,
+            container,
+            tfs,
+        ]
+    )
